@@ -151,11 +151,11 @@ details p,details li{max-width:68ch}
     </div>
     <button class="toggle" id="redBtn" aria-pressed="false">赤色ナイトモード</button>
   </div>
-  <p class="lede">雲量・月明かり・光害（ボートル）を夜ごとに掛け合わせて、撮影に使える「有効暗夜時間」を出します。今夜と明晩は、SCWの雲量マップのスクリーンショットを入れるとClaudeが画像から雲の様子を読み取り、スコアに反映します。</p>
+  <p class="lede">雲量・月明かり・光害（ボートル）を夜ごとに掛け合わせて、撮影に使える「有効暗夜時間」を出します。雲は気象庁のメソモデル（MSM）と全球モデル（GSM）の予報を自動で取り込みます。SCWの「詳細」予報と同じMSMが元になっています。</p>
   <div class="stamp">
-    <span>雲量データ <b id="stampData"></b></span>
-    <span>今夜・明晩 <b>SCW（画像から読み取り）</b></span>
-    <span>3日目以降 <b>MET Norway（ECMWFベース）</b></span>
+    <span>雲量 <b id="stampData"></b></span>
+    <button class="linkbtn" id="liveBtn" hidden>最新に更新</button>
+    <span id="liveMsg" class="note" hidden></span>
   </div>
 </header>
 
@@ -165,7 +165,8 @@ details p,details li{max-width:68ch}
 </section>
 
 <section id="scwSec">
-  <div class="sec-head"><h2>SCWの画像から雲を読み取る</h2><span class="muted" style="font-size:12px">今夜・明晩が対象</span></div>
+  <div class="sec-head"><h2>SCWの画像でも確かめる</h2><span class="muted" style="font-size:12px">任意・今夜と明晩・Claude上でのみ使えます</span></div>
+  <p class="muted" style="margin:0;font-size:13px;max-width:68ch">雲の予報は自動で取り込んでいます。SCWの局地モデルなど、別の予報を反映したいときに使います。読み取った値は、その時刻の前後100分だけ自動の予報より優先されます。</p>
   <ol class="steps">
     <li><a href="https://supercweather.com/" target="_blank" rel="noopener">SCW</a>で「雲量」を開き、見たい地域と時刻（例：22時、1時、4時）を表示します。</li>
     <li>予報時刻と地図の地名が写るようにスクリーンショットを撮ります。時刻を変えて何枚でも入れられます。</li>
@@ -223,11 +224,12 @@ details p,details li{max-width:68ch}
   <ul>
     <li><b>有効暗夜時間</b>：太陽高度 −18° 以下（天文薄明の外）の10分ごとに「晴れ率 × 月の影響 × 1/6時間」を足したもの。月が地平線上にあると、輝面比に応じて0〜1で割り引きます（半月以上でほぼ0）。</li>
     <li><b>スコア</b>：有効暗夜時間 ÷ その夜の暗夜時間 × 光害係数 × 100。光害係数はボートル2=0.95、3=0.87、4=0.75、5=0.60。</li>
-    <li><b>雲（SCW）</b>：SCWは予報を画像で配信しているため、入れたスクリーンショットをClaudeが見て、写っている地点の雲量を読み取ります。読み取った時刻の前後100分はその値を使います。読み取りは画像の色と地図からの推定なので、気になる地点はSCWで直接確かめてください。結果はこのブラウザにだけ保存されます。</li><li><b>雲（その他）</b>：SCWの値がない時間と3日目以降は、MET Norway Locationforecast（ECMWFベース）の全雲量を使います。約2日先までは1時間ごと、以降は6時間ごとの値を補間しています。</li>
-    <li><b>マイスポット</b>：月と暗夜は登録した座標で計算します。雲は60km以内の最寄り地点の数値予報で代用し、SCW画像の読み取りはその地点自体の値を使います。</li><li><b>ボートル</b>：光害マップから読んだ目安です。地点内の場所や向きで変わります。</li>
+    <li><b>雲（自動）</b>：<a href="https://open-meteo.com/en/docs/jma-api" target="_blank" rel="noopener">Open-Meteo</a>経由で気象庁のメソモデル（MSM、約5km・約3日先まで）と全球モデル（GSM）の全雲量・下層・中層・上層を取り込みます。開いたときに1時間以上たっていれば自動で取り直し、データはこの端末に保存されるので電波のない場所でも前回の予報を見られます。取得できないとき（Claude上で開いたときなど）は、ページに埋め込んだMET Norwayの予報を使います。</li><li><b>雲（SCW）</b>：SCWは予報を画像で配信しているため、入れたスクリーンショットをClaudeが見て地点ごとの雲量を読み取ります（Claude上でのみ）。読み取った時刻の前後100分は自動の予報より優先します。</li>
+    <li><b>マイスポット</b>：月・暗夜・雲（自動取得時）は登録した座標で計算します。自動取得できないときは、雲を60km以内の最寄り地点の予報で代用します。</li><li><b>ボートル</b>：光害マップから読んだ目安です。地点内の場所や向きで変わります。</li>
     <li>月・太陽の位置はこのページ内で計算しています（誤差は数分程度）。</li>
     <li>道路の夜間通行規制・冬季閉鎖は現地の情報を確認してください。</li>
   </ul>
+  <p>Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>（CC BY 4.0）／気象庁。予報の利用は個人・非商用の範囲で。</p>
 </details>
 </div>
 
@@ -363,7 +365,7 @@ let SPOTS=[];
 const BORTLE_F={1:1,2:.95,3:.87,4:.75,5:.6,6:.45};
 const SCW_VAL={clear:8,thin:40,cloudy:90};
 const SCW_LABEL={clear:"快晴",thin:"薄雲・一部雲",cloudy:"曇り"};
-const FIRST_NIGHT=[2026,9,15]; // JS month index
+const FIRST_NIGHT=(()=>{const j=new Date(Date.now()+9*3600e3);let d=Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate());if(j.getUTCHours()<6)d-=86400e3;const x=new Date(d);return[x.getUTCFullYear(),x.getUTCMonth(),x.getUTCDate()]})(); // 朝6時までは前夜扱い
 const NIGHTS=9, SCW_NIGHTS=2;
 const WD="日月火水木金土";
 
@@ -420,32 +422,94 @@ function cloudAt(id,ms){
 }
 const SCW_WINDOW=100*60e3; // SCW画像の値を前後100分まで使う
 function scwAt(id,ms){const L=obsById[id];if(!L)return null;let best=null,bd=Infinity;for(const o of L){const d=Math.abs(o.t-ms);if(d<bd){bd=d;best=o}}return bd<=SCW_WINDOW?best:null}
+/* ---------- live forecast: JMA MSM/GSM via Open-Meteo ---------- */
+const OM_VARS=["cloud_cover","cloud_cover_low","cloud_cover_mid","cloud_cover_high"];
+const OM_KEYS=["c","lo","mi","hi"];
+const LIVE_MAX_AGE=60*60e3;      // 1時間たったら取り直す
+const LIVE_STALE=12*3600e3;      // 12時間より古いキャッシュは使わない
+let LIVE=store.get("live",null), liveVer=0, liveBusy=false, liveErr="";
+if(LIVE&&(!LIVE.at||Date.now()-LIVE.at>LIVE_STALE)) LIVE=null;
+const IN_CLAUDE=!!window.claude;
+function liveAt(spot,ms){
+  if(!LIVE) return null; const d=LIVE.spots[spot.id];
+  if(!d||Math.abs(d.lat-spot.lat)>1e-3||Math.abs(d.lon-spot.lon)>1e-3) return null;
+  const x=(ms-LIVE.t0)/LIVE.step, i=Math.floor(x), f=x-i;
+  const out={};
+  for(const k of OM_KEYS){const a=d[k][i],b=d[k][i+1];
+    if(a==null){out[k]=null;continue}
+    out[k]=(b==null||f===0)?a:a+(b-a)*f;}
+  return out.c==null?null:out;
+}
+function liveHas(spot){return !!(LIVE&&LIVE.spots[spot.id]&&Math.abs(LIVE.spots[spot.id].lat-spot.lat)<1e-3)}
+async function fetchChunk(list){
+  const q=new URLSearchParams({latitude:list.map(s=>s.lat.toFixed(4)).join(","),longitude:list.map(s=>s.lon.toFixed(4)).join(","),
+    hourly:OM_VARS.join(","),timezone:"GMT",timeformat:"unixtime",forecast_days:"10"});
+  const res=await fetch("https://api.open-meteo.com/v1/jma?"+q.toString());
+  let j=null; try{j=await res.json()}catch(e){}
+  if(!res.ok||!j||j.error) throw new Error((j&&j.reason)||("HTTP "+res.status));
+  return Array.isArray(j)?j:[j];
+}
+async function fetchLive(force){
+  if(IN_CLAUDE||liveBusy) return;
+  if(!force&&LIVE&&Date.now()-LIVE.at<LIVE_MAX_AGE&&SPOTS.every(liveHas)) return;
+  liveBusy=true; liveErr=""; renderStamp();
+  try{
+    const spots={}; let t0=null, step=3600e3;
+    for(let i=0;i<SPOTS.length;i+=60){
+      const part=SPOTS.slice(i,i+60), res=await fetchChunk(part);
+      res.forEach((r,k)=>{
+        const s=part[k], h=r&&r.hourly; if(!h||!h.time) return;
+        const T=h.time.map(x=>x*1000);
+        if(t0==null){t0=T[0]; if(T.length>1) step=T[1]-T[0]}
+        const off=Math.round((T[0]-t0)/step), rec={lat:s.lat,lon:s.lon};
+        OM_VARS.forEach((v,vi)=>{const arr=h[v]||[];const o=[];for(let n=0;n<off;n++)o.push(null);arr.forEach(x=>o.push(x==null?null:Math.round(x)));rec[OM_KEYS[vi]]=o});
+        spots[s.id]=rec;
+      });
+    }
+    if(t0==null) throw new Error("データが空でした");
+    LIVE={at:Date.now(),t0,step,spots}; store.set("live",LIVE); liveVer++; cache.clear();
+  }catch(e){ liveErr=String(e&&e.message||e).slice(0,120) }
+  finally{ liveBusy=false; renderAll() }
+}
+function ago(ms){const m=Math.round((Date.now()-ms)/60e3);return m<1?"たった今":m<60?m+"分前":Math.round(m/60)+"時間前"}
+function renderStamp(){
+  const st=document.getElementById("stampData"), msg=document.getElementById("liveMsg"), btn=document.getElementById("liveBtn");
+  btn.hidden=IN_CLAUDE; btn.disabled=liveBusy; btn.textContent=liveBusy?"取得中…":"最新に更新";
+  if(LIVE){const d=new Date(LIVE.at+9*3600e3);
+    st.textContent=`気象庁MSM/GSM（Open-Meteo）・${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}:${String(d.getUTCMinutes()).padStart(2,"0")}取得（${ago(LIVE.at)}）`;}
+  else st.textContent=`埋め込みデータ（MET Norway・${STAMP}）`;
+  msg.textContent=IN_CLAUDE?"Claude上では最新の予報を取りに行けません。GitHub版で開くと気象庁モデルの最新予報を自動で取り込みます。"
+    :liveErr?`最新の予報を取得できませんでした（${liveErr}）。${LIVE?"前回取得したデータで表示しています。":"埋め込みデータで表示しています。"}`:"";
+  msg.hidden=!msg.textContent;
+}
+
 /* ---------- night evaluation ---------- */
 function nightStart(n){return Date.UTC(FIRST_NIGHT[0],FIRST_NIGHT[1],FIRST_NIGHT[2]+n,8)} // 17:00 JST
 function nightDate(n){return new Date(Date.UTC(FIRST_NIGHT[0],FIRST_NIGHT[1],FIRST_NIGHT[2]+n))}
 function dateKey(n){const d=nightDate(n);return d.toISOString().slice(0,10)}
 const cache=new Map();
 function evalNight(spot,n,useScw=true){
-  const key=spot.id+"|"+n+"|"+(useScw?obsVer+"|"+(scw[dateKey(n)+"|"+spot.id]||""):"base");
+  const key=spot.id+"|"+n+"|"+liveVer+"|"+(useScw?obsVer+"|"+(scw[dateKey(n)+"|"+spot.id]||""):"base");
   if(cache.has(key)) return cache.get(key);
   const s=nightStart(n), e=s+13*3600e3, step=600e3;
   const ov=useScw&&n<SCW_NIGHTS?scw[dateKey(n)+"|"+spot.id]:null;
-  let dark=0,moonless=0,eff=0,cSum=0,cN=0,missing=0,scwN=0;
+  let dark=0,moonless=0,eff=0,cSum=0,cN=0,missing=0,scwN=0,liveN=0,lay={lo:0,mi:0,hi:0,n:0};
   const samples=[];
   const ph=moonPhase(s+6*3600e3);
   for(let t=s;t<=e;t+=step){
     const sa=sunAlt(t,spot.lat,spot.lon), ma=moonAlt(t,spot.lat,spot.lon);
-    let c=null,src="model";
+    let c=null,src="model",L=null;
     const o=useScw?scwAt(spot.id,t):null;
-    if(o){c=o.c;src="scw"} else if(ov){c=SCW_VAL[ov];src="manual"} else c=spot.cloudId?cloudAt(spot.cloudId,t):null;
-    samples.push({t,sa,ma,c,src});
+    if(o){c=o.c;src="scw"} else if(ov){c=SCW_VAL[ov];src="manual"}
+    else { L=liveAt(spot,t); if(L){c=L.c;src="live"} else c=spot.cloudId?cloudAt(spot.cloudId,t):null; }
+    samples.push({t,sa,ma,c,src,L});
     if(t===e) break;
     if(sa<-18){
       dark+=1/6;
       const mf=ma<0?1:Math.max(0,1-Math.min(1,ph.illum*1.6*(0.5+0.5*Math.min(1,ma/20))));
       if(ma<0) moonless+=1/6;
       if(c==null){missing++;continue}
-      cSum+=c;cN++; if(src==="scw")scwN++;
+      cSum+=c;cN++; if(src==="scw")scwN++; if(src==="live"){liveN++;if(L.lo!=null){lay.lo+=L.lo;lay.mi+=L.mi;lay.hi+=L.hi;lay.n++}}
       eff+=(1/6)*(1-c/100)*mf;
     }
   }
@@ -453,8 +517,10 @@ function evalNight(spot,n,useScw=true){
   const ok=cN>0&&missing<cN*0.3;
   const score=ok&&dark>0?Math.round(Math.min(100,eff/dark*BORTLE_F[spot.bortle]*100)):null;
   const scwFrac=cN?scwN/cN:0;
-  const source=scwFrac>0?(scwFrac>=0.99?"SCW画像":"SCW画像＋MET Norway"):ov?"SCW手動判定":"MET Norway";
-  const r={dark,moonless,eff,cloud,score,phase:ph,samples,ov,scwFrac,source};
+  const live=liveN>0, model=live?"気象庁モデル":"MET Norway";
+  const source=scwFrac>0?(scwFrac>=0.99?"SCW画像":"SCW画像＋"+model):ov?"SCW手動判定":model;
+  const layers=lay.n?{lo:lay.lo/lay.n,mi:lay.mi/lay.n,hi:lay.hi/lay.n}:null;
+  const r={dark,moonless,eff,cloud,score,phase:ph,samples,ov,scwFrac,source,live,model,layers};
   cache.set(key,r); return r;
 }
 function grade(s){if(s==null)return["データなし","var(--muted)"];if(s>=70)return["好条件","var(--good)"];if(s>=45)return["条件付き","var(--warn)"];if(s>=20)return["厳しい","var(--bad)"];return["不向き","var(--muted)"]}
@@ -518,7 +584,7 @@ function renderChips(){
 function srcTag(r,n,s){
   if(r.scwFrac>0) return `<span class="tag scwset">SCW画像</span>`;
   if(r.ov) return `<span class="tag scwset">SCW ${SCW_LABEL[r.ov]}</span>`;
-  if(n<SCW_NIGHTS) return `<span class="tag scw">SCW未読込</span>`;
+  if(r.live) return `<span class="tag">気象庁モデル</span>`;
   return `<span class="tag">MET Norway</span>`;
 }
 /* ---------- render: ranking ---------- */
@@ -614,18 +680,18 @@ function renderDetail(){
     const readings=(obsById[s.id]||[]).filter(o=>o.t>=t0&&o.t<=t1).sort((a,b)=>a.t-b.t);
     scwHtml=`<div class="scwbox"><div><b>SCW画像からの読み取り</b>
       ${readings.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${readings.map(o=>`<span class="tag scwset">${jst(o.t)} 雲${Math.round(o.c)}%</span>`).join("")}</div>
-      <div class="muted" style="font-size:12px;margin-top:6px">読み取った時刻の前後100分はSCWの値、それ以外の時間はMET Norwayの予報で計算しています。MET Norwayだけだと暗夜の平均雲量は ${base.cloud==null?"–":Math.round(base.cloud)+"%"} です。</div>`
-      :`<div class="muted" style="font-size:12px">この地点はまだSCWの画像から読み取っていません。上の「SCWの画像から雲を読み取る」で、${s.pref}周辺が写った ${dlabel(n)} 夜（${darkWindow(r)}）の画像を入れてください。</div>`}</div>
-      <details class="manual"><summary>画像が使えないとき：手動で判定する</summary>
+      <div class="muted" style="font-size:12px;margin-top:6px">読み取った時刻の前後100分はSCWの値、それ以外の時間は${base.model}の予報で計算しています。${base.model}だけだと暗夜の平均雲量は ${base.cloud==null?"–":Math.round(base.cloud)+"%"} です。</div>`
+      :`<div class="muted" style="font-size:12px">この地点はSCWの画像を読み取っていないので、${base.model}の予報で計算しています。SCWでも確かめたいときは、上の「SCWの画像でも確かめる」に${s.pref}周辺が写った ${dlabel(n)} 夜（${darkWindow(r)}）の画像を入れてください。</div>`}</div>
+      <details class="manual"><summary>SCWを見て手動で判定する</summary>
       <div class="seg" id="scwSeg" style="margin-top:8px">${[["","未確認"],["clear","快晴"],["thin","薄雲・一部雲"],["cloudy","曇り"]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>
       <div class="seg" style="margin-top:6px"><button id="scwPref">この判定を${s.pref}の全地点に適用</button></div>
       <p style="margin:6px 0 0">SCW画像の読み取り値がある時間は、そちらが優先されます。</p></details></div>`;
   } else {
-    scwHtml=`<div class="muted" style="font-size:12px">この夜はSCWの予報範囲（約2日先まで）の外です。雲はMET Norway（ECMWFベース）の予報を使っています。2日前になったらSCWの画像で確認してください。</div>`;
+    scwHtml=`<div class="muted" style="font-size:12px">この夜はSCWの予報範囲（約2日先まで）の外です。雲は${r.model}の予報を使っています${r.live?"（3日先ごろからは全球モデルGSM）":""}。</div>`;
   }
   sec.hidden=false;
   document.getElementById("detail").innerHTML=`
-    <div class="hd"><div><div class="eyebrow">${s.my?"マイスポット・"+s.pref+"付近":s.pref}${s.elev!=null?"・標高"+s.elev+"m":""}・ボートル${s.bortle}（目安）</div><h2>${esc(s.name)}</h2><div class="muted" style="font-size:13px">${dlabel(n)}（${WD[d.getUTCDay()]}）17時 〜 翌6時</div></div>
+    <div class="hd"><div><div class="eyebrow">${s.my?"マイスポット・"+s.pref+"付近":s.pref}${s.elev!=null?"・標高"+s.elev+"ｍ":""}・ボートル${s.bortle}（目安）</div><h2>${esc(s.name)}</h2><div class="muted" style="font-size:13px">${dlabel(n)}（${WD[d.getUTCDay()]}）17時 〜 翌6時</div></div>
       <div style="text-align:right"><div class="big" style="color:${c.bg==="transparent"?cssv("--muted"):c.bg}">${r.score??"–"}</div><div class="grade" style="color:${gc}">${g}</div></div></div>
     <div class="kv">
       <div><span>有効暗夜時間</span><b>${fmtH(r.eff)}</b></div>
@@ -634,10 +700,13 @@ function renderDetail(){
       <div><span>月</span><b>${moonIcon(r.phase,16)} 月齢${r.phase.age.toFixed(1)}・${Math.round(r.phase.illum*100)}%</b></div>
       <div><span>月の出入り</span><b style="font-size:13px">${moonEvents(r)}</b></div>
       <div><span>暗夜の平均雲量（${r.source}）</span><b>${r.cloud==null?"–":Math.round(r.cloud)+"%"}</b></div>
+      ${r.layers?`<div><span>下層・中層・上層</span><b>${Math.round(r.layers.lo)}・${Math.round(r.layers.mi)}・${Math.round(r.layers.hi)}%</b></div>`:""}
     </div>
+    ${r.layers&&s.elev!=null&&s.elev>=1200&&r.layers.lo>=40&&r.layers.mi<25&&r.layers.hi<25?`<div class="note">雲の大半は下層雲（地上〜約3km）の予報です。標高${s.elev}mのこの地点では、雲の上に出て雲海越しの星空になる可能性があります。</div>`:""}
+    ${r.layers&&r.layers.hi>=40&&r.layers.lo<20?`<div class="note">上層の薄い雲（巻雲など）が多い予報です。星は見えても、にじんだり暗い星が写りにくくなったりします。</div>`:""}
     <div class="timeline">${timelineSVG(r)}</div>
     ${scwHtml}
-    ${s.my?`<div class="note">${s.cloudId?`雲の数値予報は${s.proxy.name}（${Math.round(s.proxyKm)}km先）のものを使っています。`:"近くに予報地点がないため、雲はSCW画像の読み取り値だけで計算します。"}</div>`:""}
+    ${s.my&&!liveHas(s)?`<div class="note">${s.cloudId?`雲の数値予報は${s.proxy.name}（${Math.round(s.proxyKm)}km先）のものを使っています。`:"近くに予報地点がないため、雲はSCW画像の読み取り値だけで計算します。"}</div>`:""}
     ${s.note?`<div class="note">${s.note}</div>`:""}
     <div class="links"><a href="https://supercweather.com/" target="_blank" rel="noopener">SCWを開く</a><a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}" target="_blank" rel="noopener">地図で見る</a><a href="https://www.lightpollutionmap.info/#zoom=10.5&lat=${s.lat}&lon=${s.lon}" target="_blank" rel="noopener">光害マップ</a><button class="more" id="closeDetail" style="padding:0">閉じる</button></div>`;
   document.getElementById("closeDetail").onclick=()=>{state.spot=null;renderAll()};
@@ -814,7 +883,7 @@ document.getElementById("myAdd").onclick=()=>{
   saveMy(); document.getElementById("myName").value=""; document.getElementById("myLoc").value="";
   const s=SPOTS.find(x=>x.id===id);
   myMsg(`${name}を登録しました。${s.cloudId?`雲は${s.proxy.name}（${Math.round(s.proxyKm)}km）の予報で代用します。`:"近くに予報地点がないので、雲はSCW画像の読み取りで補ってください。"}`);
-  renderAll();
+  renderAll(); fetchLive();
 };
 document.getElementById("myLookup").onclick=async()=>{
   const q=document.getElementById("myName").value.trim();
@@ -833,10 +902,11 @@ document.getElementById("myLookup").onclick=async()=>{
   finally{btn.disabled=false}
 };
 
-function renderAll(){renderNights();renderChips();renderRank();renderGrid();renderDetail();renderPlan();renderShots();renderMy();document.getElementById("countLine").textContent=`全国 47都道府県・${BASE_SPOTS.length}地点${mySpots.length?"＋マイスポット"+mySpots.length:""}`}
+function renderAll(){renderNights();renderChips();renderRank();renderGrid();renderDetail();renderPlan();renderShots();renderMy();renderStamp();document.getElementById("countLine").textContent=`全国 47都道府県・${BASE_SPOTS.length}地点${mySpots.length?"＋マイスポット"+mySpots.length:""}`}
 rebuildSpots();
 indexObs();
-document.getElementById("stampData").textContent=STAMP;
+document.getElementById("liveBtn").onclick=()=>fetchLive(true);
+fetchLive();
 const rb=document.getElementById("redBtn");
 function applyRed(on){document.documentElement.classList.toggle("red",on);rb.setAttribute("aria-pressed",String(on));}
 applyRed(store.get("red",false));
