@@ -128,6 +128,12 @@ button.filebtn{background:none}
 .mylist{display:flex;flex-direction:column;border-top:1px solid var(--line)}
 .myrow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--line);font-size:14px}
 .myrow .st{font-size:12px;color:var(--muted)}
+/* filter */
+#prefChips{display:flex;flex-direction:column;gap:8px}
+.chip .cnt{font-family:var(--f-num);font-size:11px;color:var(--muted)}
+.chip[aria-pressed="true"] .cnt{color:var(--accent)}
+.chips.sub{padding-left:10px;border-left:2px solid var(--line)}
+.sublab{font-size:11px;color:var(--muted);letter-spacing:.1em;align-self:center;margin-right:2px}
 /* plan */
 .plan svg{width:100%;height:auto;display:block}
 .windows{display:flex;flex-wrap:wrap;gap:8px}
@@ -185,7 +191,7 @@ details p,details li{max-width:68ch}
 
 <section>
   <div class="sec-head"><h2 id="rankTitle">この夜のおすすめ</h2></div>
-  <div class="chips" id="prefChips"></div>
+  <div id="prefChips"></div>
   <div class="rank" id="rank"></div>
   <button class="more" id="moreBtn">すべて表示</button>
 </section>
@@ -225,7 +231,7 @@ details p,details li{max-width:68ch}
     <li><b>有効暗夜時間</b>：太陽高度 −18° 以下（天文薄明の外）の10分ごとに「晴れ率 × 月の影響 × 1/6時間」を足したもの。月が地平線上にあると、輝面比に応じて0〜1で割り引きます（半月以上でほぼ0）。</li>
     <li><b>スコア</b>：有効暗夜時間 ÷ その夜の暗夜時間 × 光害係数 × 100。光害係数はボートル2=0.95、3=0.87、4=0.75、5=0.60。</li>
     <li><b>雲（自動）</b>：<a href="https://open-meteo.com/en/docs/jma-api" target="_blank" rel="noopener">Open-Meteo</a>経由で気象庁のメソモデル（MSM、約5km・約3日先まで）と全球モデル（GSM）の全雲量・下層・中層・上層を取り込みます。開いたときに1時間以上たっていれば自動で取り直し、データはこの端末に保存されるので電波のない場所でも前回の予報を見られます。取得できないとき（Claude上で開いたときなど）は、ページに埋め込んだMET Norwayの予報を使います。</li><li><b>雲（SCW）</b>：SCWは予報を画像で配信しているため、入れたスクリーンショットをClaudeが見て地点ごとの雲量を読み取ります（Claude上でのみ）。読み取った時刻の前後100分は自動の予報より優先します。</li>
-    <li><b>マイスポット</b>：月・暗夜・雲（自動取得時）は登録した座標で計算します。自動取得できないときは、雲を60km以内の最寄り地点の予報で代用します。</li><li><b>ボートル</b>：光害マップから読んだ目安です。地点内の場所や向きで変わります。</li>
+    <li><b>マイスポット</b>：月・暗夜・雲（自動取得時）は登録した座標で計算します。自動取得できないときは、雲を60km以内の最寄り地点の予報で代用します。</li><li><b>地点</b>：座標は駐車場や展望地点付近の目安です。出かける前に地図で場所を確かめてください。自動取得できないとき（Claude上）、予報を埋め込んでいない地点は60km以内の最寄り地点の予報で代用します。</li><li><b>ボートル</b>：光害マップから読んだ目安です。地点内の場所や向きで変わります。</li>
     <li>月・太陽の位置はこのページ内で計算しています（誤差は数分程度）。</li>
     <li>道路の夜間通行規制・冬季閉鎖は現地の情報を確認してください。</li>
   </ul>
@@ -356,8 +362,93 @@ const BASE_SPOTS = [
  ["oishi","生石高原","和歌山",34.12,135.33,870,3,""],
  ["tottorisakyu","鳥取砂丘","鳥取",35.54,134.23,40,4,""],
  ["unzen","雲仙・仁田峠","長崎",32.76,130.27,1100,3,""],
- ["yakushima","屋久島","鹿児島",30.36,130.54,100,1,""]
-
+ ["yakushima","屋久島","鹿児島",30.36,130.54,100,1,""],
+ ["shiretoko","知床・ウトロ","北海道",44.07,145.00,20,1,""],
+ ["notsuke","野付半島","北海道",43.58,145.30,5,1,""],
+ ["tsurui","鶴居村","北海道",43.23,144.32,60,2,""],
+ ["tomamu","占冠・トマム","北海道",43.07,142.62,600,2,""],
+ ["akanko","阿寒湖","北海道",43.43,144.10,420,2,""],
+ ["soya","宗谷岬","北海道",45.52,141.94,20,2,""],
+ ["esan","函館・恵山","北海道",41.82,141.17,50,3,""],
+ ["shikaribetsu","然別湖","北海道",43.28,143.11,800,1,"冬季は道路状況を確認"],
+ ["hakka","十和田湖・発荷峠","青森",40.43,140.95,630,2,""],
+ ["shiriya","尻屋崎","青森",41.43,141.46,20,1,"ゲートの開閉時間を確認"],
+ ["kitayamazaki","北山崎","岩手",40.00,141.94,200,1,""],
+ ["hayachine","早池峰・河原の坊","岩手",39.54,141.49,600,1,""],
+ ["kamiwari","南三陸・神割崎","宮城",38.65,141.53,20,2,""],
+ ["onikobe","鳴子・鬼首","宮城",38.84,140.67,400,2,""],
+ ["tazawako","田沢湖","秋田",39.72,140.66,250,2,""],
+ ["hijiori","最上・肘折温泉","山形",38.60,140.16,400,2,""],
+ ["hatoriko","天栄・羽鳥湖高原","福島",37.23,140.00,800,2,""],
+ ["nakatsukyo","奥秩父・中津峡","埼玉",35.97,138.80,700,2,""],
+ ["katsuura","勝浦・八幡岬","千葉",35.14,140.33,20,4,""],
+ ["kozushima","神津島","東京",34.21,139.13,50,1,"船・飛行機の便を確認"],
+ ["chichijima","小笠原・父島","東京",27.09,142.20,50,1,"船は週1便程度"],
+ ["naeba","苗場","新潟",36.79,138.78,900,3,""],
+ ["sasagawa","笹川流れ","新潟",38.40,139.43,10,2,""],
+ ["okutadami","奥只見湖","新潟",37.15,139.23,750,1,"冬季閉鎖あり"],
+ ["gokayama","五箇山","富山",36.42,136.93,400,2,""],
+ ["amaharashi","氷見・雨晴海岸","富山",36.82,136.99,10,4,""],
+ ["ichirino","白山一里野","石川",36.29,136.62,500,2,""],
+ ["shiroyone","能登・白米千枚田","石川",37.41,136.99,50,2,"道路の復旧状況を確認"],
+ ["echizenmisaki","越前岬","福井",35.97,135.96,50,3,""],
+ ["rainbowline","三方五湖レインボーライン","福井",35.58,135.88,400,3,"有料道路の夜間通行を確認"],
+ ["doshi","道志村","山梨",35.53,139.03,700,3,""],
+ ["takabocchi","高ボッチ高原","長野",36.14,137.99,1650,3,"冬季閉鎖あり"],
+ ["tanohara","御嶽山・田の原","長野",35.88,137.47,2180,1,"冬季閉鎖あり"],
+ ["ikedayama","揖斐・池田山","岐阜",35.47,136.54,900,4,""],
+ ["nenoue","恵那・根の上高原","岐阜",35.40,137.43,950,3,""],
+ ["irago","伊良湖岬","愛知",34.58,137.01,20,3,""],
+ ["dando","設楽・段戸湖","愛知",35.10,137.50,900,2,""],
+ ["shichirimihama","熊野・七里御浜","三重",33.85,136.08,10,3,""],
+ ["daiozaki","志摩・大王崎","三重",34.28,136.90,20,3,""],
+ ["makino","マキノ高原","滋賀",35.48,136.04,300,3,""],
+ ["kutsuki","朽木","滋賀",35.35,135.92,200,3,""],
+ ["oeyama","大江山","京都",35.46,135.11,600,3,""],
+ ["kyogamisaki","京丹後・経ヶ岬","京都",35.78,135.23,50,2,""],
+ ["kongozan","金剛山","大阪",34.42,135.68,1000,5,""],
+ ["tonomine","砥峰高原","兵庫",35.11,134.73,850,3,""],
+ ["hachikogen","ハチ高原","兵庫",35.40,134.53,900,2,""],
+ ["soni","曽爾高原","奈良",34.53,136.17,700,3,""],
+ ["tamakisan","十津川・玉置山","奈良",33.93,135.82,1000,1,""],
+ ["gomadan","龍神・護摩壇山","和歌山",34.06,135.57,1300,2,""],
+ ["saji","さじアストロパーク","鳥取",35.32,134.18,400,2,""],
+ ["kuniga","隠岐・国賀海岸","島根",36.10,133.00,50,1,"船の便を確認"],
+ ["hikimi","匹見峡","島根",34.55,131.95,300,1,""],
+ ["hiruzen","蒜山高原","岡山",35.30,133.68,550,2,""],
+ ["onbara","鏡野・恩原高原","岡山",35.27,133.95,700,2,""],
+ ["azumayama","庄原・吾妻山","広島",35.07,133.10,1000,1,"冬季は道路状況を確認"],
+ ["kurahashi","倉橋島・桂浜","広島",34.10,132.52,20,4,""],
+ ["tsunoshima","角島","山口",34.35,130.84,20,3,""],
+ ["senjojiki","長門・千畳敷","山口",34.39,131.11,330,2,""],
+ ["okawara","大川原高原","徳島",33.95,134.42,900,3,""],
+ ["takegashima","宍喰・竹ヶ島","徳島",33.50,134.30,20,2,""],
+ ["daisenzan","大川山","香川",34.11,133.94,1000,3,""],
+ ["kankakei","小豆島・寒霞渓","香川",34.52,134.27,600,3,""],
+ ["tsuchigoya","石鎚山・土小屋","愛媛",33.75,133.13,1500,1,"冬季閉鎖あり"],
+ ["sadamisaki","佐田岬","愛媛",33.34,132.02,50,2,""],
+ ["muroto","室戸岬","高知",33.25,134.18,20,2,""],
+ ["nakatsu","仁淀川・中津渓谷","高知",33.62,133.14,300,1,""],
+ ["hikosan","英彦山","福岡",33.47,130.93,800,3,""],
+ ["munakata","宗像・大島","福岡",33.90,130.43,50,3,"船の便を確認"],
+ ["taradake","鹿島・多良岳","佐賀",33.00,130.10,900,3,""],
+ ["hadomisaki","呼子・波戸岬","佐賀",33.55,129.84,20,3,""],
+ ["tsushima","対馬・烏帽子岳","長崎",34.33,129.30,170,1,""],
+ ["hirado","平戸・川内峠","長崎",33.35,129.53,200,2,""],
+ ["kusasenri","阿蘇・草千里","熊本",32.88,131.06,1100,2,""],
+ ["itsuki","五木村","熊本",32.40,130.83,300,1,""],
+ ["sakitsu","天草・崎津","熊本",32.33,130.03,20,2,""],
+ ["futago","国東・両子寺","大分",33.58,131.60,300,2,""],
+ ["kamae","佐伯・蒲江","大分",32.80,131.95,20,2,""],
+ ["gokase","五ヶ瀬","宮崎",32.66,131.17,1200,1,""],
+ ["toimisaki","都井岬","宮崎",31.36,131.34,200,2,""],
+ ["ayamaru","奄美大島・あやまる岬","鹿児島",28.46,129.72,30,1,""],
+ ["tanegashima","種子島","鹿児島",30.38,130.96,30,2,""],
+ ["yoron","与論島","鹿児島",27.03,128.42,20,1,""],
+ ["iriomote","西表島","沖縄",24.35,123.80,20,1,""],
+ ["hateruma","波照間島","沖縄",24.06,123.79,20,1,"南十字星が見える"],
+ ["higashihenna","宮古島・東平安名崎","沖縄",24.72,125.47,20,2,""],
+ ["kumejima","久米島","沖縄",26.35,126.80,20,1,""]
 ].map(a=>({id:a[0],name:a[1],pref:a[2],lat:a[3],lon:a[4],elev:a[5],bortle:a[6],note:a[7],region:PREF_REGION[a[2]]}));
 const REGION_NAMES=REGIONS.map(r=>r[0]);
 
@@ -408,7 +499,10 @@ let scwObs=store.get("scwObs",[]);    // [{s:shotId,id,c,conf,t}]
 let obsVer=0, obsById={};
 function indexObs(){obsById={};scwObs.forEach(o=>{if(o.t==null)return;(obsById[o.id]=obsById[o.id]||[]).push(o)});obsVer++;cache.clear()}
 function saveScw(){store.set("scw",scw);store.set("scwShots",shots);store.set("scwObs",scwObs);indexObs()}
-let state={night:0,regions:new Set(REGION_NAMES),showAll:false,spot:null};
+let state={night:0,showAll:false,spot:null,...(()=>{const f=store.get("filter",{});return {region:REGION_NAMES.includes(f.region)?f.region:"全国",pref:f.pref||null}})()};
+function inFilter(s){return (state.region==="全国"||s.region===state.region)&&(!state.pref||s.pref===state.pref)}
+function setFilter(region,pref){state.region=region;state.pref=pref||null;state.showAll=false;store.set("filter",{region:state.region,pref:state.pref});renderAll()}
+function filterLabel(){return state.pref?state.pref:state.region==="全国"?"全国":state.region}
 
 /* ---------- cloud interpolation ---------- */
 CLOUD.groups.forEach(g=>g.T=g.times.map(s=>Date.parse(s.replace("Z",":00Z"))));
@@ -554,7 +648,7 @@ function renderNights(){
   el.innerHTML="";
   for(let n=0;n<NIGHTS;n++){
     const r=evalNight(REF,n);
-    let best=null; SPOTS.forEach(s=>{const v=evalNight(s,n).score;if(v!=null&&(best==null||v>best))best=v});
+    let best=null; SPOTS.filter(inFilter).forEach(s=>{const v=evalNight(s,n).score;if(v!=null&&(best==null||v>best))best=v});
     const c=scoreColor(best), d=nightDate(n);
     const b=document.createElement("button");
     b.className="night"; b.setAttribute("aria-pressed",String(n===state.night));
@@ -571,15 +665,25 @@ function renderNights(){
 /* ---------- render: chips ---------- */
 function renderChips(){
   const el=document.getElementById("prefChips"); el.innerHTML="";
-  const allOn=state.regions.size===REGION_NAMES.length;
-  const all=document.createElement("button"); all.className="chip";
-  all.textContent="全国"; all.setAttribute("aria-pressed",String(allOn));
-  all.onclick=()=>{state.regions=new Set(REGION_NAMES);renderAll()}; el.appendChild(all);
-  REGION_NAMES.forEach(p=>{const b=document.createElement("button");b.className="chip";b.textContent=p;
-    b.setAttribute("aria-pressed",String(state.regions.has(p)&&!allOn));
-    b.onclick=()=>{ if(allOn) state.regions=new Set([p]);
-      else if(state.regions.has(p)){state.regions.delete(p); if(!state.regions.size) state.regions=new Set(REGION_NAMES)} else state.regions.add(p);
-      renderAll()}; el.appendChild(b)});
+  const row1=document.createElement("div"); row1.className="chips";
+  ["全国",...REGION_NAMES].forEach(rg=>{const b=document.createElement("button");b.className="chip";
+    const n=rg==="全国"?SPOTS.length:SPOTS.filter(s=>s.region===rg).length;
+    b.innerHTML=`${rg} <span class="cnt">${n}</span>`;b.setAttribute("aria-pressed",String(state.region===rg));
+    b.onclick=()=>setFilter(rg,null); row1.appendChild(b)});
+  el.appendChild(row1);
+  if(state.region!=="全国"){
+    const ps=(REGIONS.find(r=>r[0]===state.region)||[,[]])[1];
+    if(ps.length>1){
+      const row2=document.createElement("div"); row2.className="chips sub";
+      const lab=document.createElement("span"); lab.className="sublab"; lab.textContent="県"; row2.appendChild(lab);
+      const all=document.createElement("button"); all.className="chip"; all.textContent="すべて"; all.setAttribute("aria-pressed",String(!state.pref));
+      all.onclick=()=>setFilter(state.region,null); row2.appendChild(all);
+      ps.forEach(p=>{const n=SPOTS.filter(s=>s.pref===p).length; if(!n) return;
+        const b=document.createElement("button");b.className="chip";b.innerHTML=`${p} <span class="cnt">${n}</span>`;
+        b.setAttribute("aria-pressed",String(state.pref===p));b.onclick=()=>setFilter(state.region,p);row2.appendChild(b)});
+      el.appendChild(row2);
+    }
+  }
 }
 function srcTag(r,n,s){
   if(r.scwFrac>0) return `<span class="tag scwset">SCW画像</span>`;
@@ -590,8 +694,8 @@ function srcTag(r,n,s){
 /* ---------- render: ranking ---------- */
 function renderRank(){
   const n=state.night, d=nightDate(n);
-  document.getElementById("rankTitle").textContent=`${dlabel(n)}（${WD[d.getUTCDay()]}）の夜のおすすめ`;
-  const list=SPOTS.filter(s=>state.regions.has(s.region)).map(s=>({s,r:evalNight(s,n)}))
+  document.getElementById("rankTitle").textContent=`${dlabel(n)}（${WD[d.getUTCDay()]}）の夜のおすすめ・${filterLabel()}`;
+  const list=SPOTS.filter(inFilter).map(s=>({s,r:evalNight(s,n)}))
     .sort((a,b)=>(b.r.score??-1)-(a.r.score??-1));
   const el=document.getElementById("rank"); el.innerHTML="";
   const shown=state.showAll?list:list.slice(0,10);
@@ -618,9 +722,9 @@ function renderGrid(){
   let h="<thead><tr><th></th>";
   for(let n=0;n<NIGHTS;n++){const d=nightDate(n);h+=`<th class="${n===state.night?"sel":""}">${dlabel(n)}<br>${WD[d.getUTCDay()]}</th>`}
   h+="</tr></thead><tbody>";
-  REGIONS.filter(([rg])=>state.regions.has(rg)).forEach(([rg,ps])=>{
+  REGIONS.filter(([rg])=>state.region==="全国"||rg===state.region).forEach(([rg,ps])=>{
     h+=`<tr class="pref"><td colspan="${NIGHTS+1}">${rg}</td></tr>`;
-    ps.forEach(p=>SPOTS.filter(s=>s.pref===p).forEach(s=>{
+    ps.filter(p=>!state.pref||p===state.pref).forEach(p=>SPOTS.filter(s=>s.pref===p).forEach(s=>{
       h+=`<tr><td class="lab">${s.my?"★ ":""}${esc(s.name)} <small>${s.pref}・B${s.bortle}</small></td>`;
       for(let n=0;n<NIGHTS;n++){
         const r=evalNight(s,n),c=scoreColor(r.score);
@@ -706,7 +810,7 @@ function renderDetail(){
     ${r.layers&&r.layers.hi>=40&&r.layers.lo<20?`<div class="note">上層の薄い雲（巻雲など）が多い予報です。星は見えても、にじんだり暗い星が写りにくくなったりします。</div>`:""}
     <div class="timeline">${timelineSVG(r)}</div>
     ${scwHtml}
-    ${s.my&&!liveHas(s)?`<div class="note">${s.cloudId?`雲の数値予報は${s.proxy.name}（${Math.round(s.proxyKm)}km先）のものを使っています。`:"近くに予報地点がないため、雲はSCW画像の読み取り値だけで計算します。"}</div>`:""}
+    ${(s.my||s.proxy)&&!liveHas(s)?`<div class="note">${s.cloudId?`雲の数値予報は${s.proxy.name}（${Math.round(s.proxyKm)}km先）のものを使っています。`:"近くに予報地点がないため、雲はSCW画像の読み取り値だけで計算します。"}</div>`:""}
     ${s.note?`<div class="note">${s.note}</div>`:""}
     <div class="links"><a href="https://supercweather.com/" target="_blank" rel="noopener">SCWを開く</a><a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}" target="_blank" rel="noopener">地図で見る</a><a href="https://www.lightpollutionmap.info/#zoom=10.5&lat=${s.lat}&lon=${s.lon}" target="_blank" rel="noopener">光害マップ</a><button class="more" id="closeDetail" style="padding:0">閉じる</button></div>`;
   document.getElementById("closeDetail").onclick=()=>{state.spot=null;renderAll()};
@@ -761,6 +865,7 @@ function updScwCtl(){
 (async()=>{
   try{ sampleFn = window.claude ? await window.claude.use("sample") : null }catch(e){ sampleFn=null }
   if(sampleFn){ try{ const lim=await sampleFn.limits(); imgLimit=lim&&lim.images?lim.images:null }catch(e){ imgLimit=null } }
+  if(!window.claude){$("scwSec").hidden=true;return}
   if(!sampleFn||!imgLimit) setUnavail("この表示では画像の読み取りが使えません。claude.aiまたはClaudeアプリで開くと使えます。地点の詳細から手動で判定することもできます。");
   updScwCtl();
 })();
@@ -843,11 +948,12 @@ function renderShots(){
 
 /* ---------- my spots (per viewer) ---------- */
 function distKm(a,b,c,d){const R=6371,t=Math.PI/180,x=(d-b)*t*Math.cos((a+c)/2*t),y=(c-a)*t;return Math.sqrt(x*x+y*y)*R}
-function nearestBase(lat,lon){let best=null,bd=Infinity;BASE_SPOTS.forEach(s=>{const d=distKm(lat,lon,s.lat,s.lon);if(d<bd){bd=d;best=s}});return {spot:best,km:bd}}
+function nearestBase(lat,lon){let best=null,bd=Infinity;BASE_SPOTS.forEach(s=>{if(!CLOUD_OF[s.id])return;const d=distKm(lat,lon,s.lat,s.lon);if(d<bd){bd=d;best=s}});return {spot:best,km:bd}}
 const PROXY_MAX_KM=60;
 let mySpots=store.get("mySpots",[]);
 function makeMy(m){const nb=nearestBase(m.lat,m.lon);return {...m,my:true,elev:m.elev??null,note:"",pref:nb.spot.pref,region:nb.spot.region,proxy:nb.spot,proxyKm:nb.km,cloudId:nb.km<=PROXY_MAX_KM?nb.spot.id:null}}
-function rebuildSpots(){SPOTS=[...BASE_SPOTS.map(s=>({...s,cloudId:s.id})),...mySpots.map(makeMy)];cache.clear()}
+function baseWithProxy(s){if(CLOUD_OF[s.id])return {...s,cloudId:s.id};const nb=nearestBase(s.lat,s.lon);return {...s,proxy:nb.spot,proxyKm:nb.km,cloudId:nb.km<=PROXY_MAX_KM?nb.spot.id:null}}
+function rebuildSpots(){SPOTS=[...BASE_SPOTS.map(baseWithProxy),...mySpots.map(makeMy)];cache.clear()}
 function saveMy(){store.set("mySpots",mySpots);rebuildSpots()}
 function parseLoc(txt){
   txt=String(txt||"").trim(); if(!txt) return null;
