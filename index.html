@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0f1d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="星見どき">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>星見どきナビ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -134,6 +138,18 @@ button.filebtn{background:none}
 .chip[aria-pressed="true"] .cnt{color:var(--accent)}
 .chips.sub{padding-left:10px;border-left:2px solid var(--line)}
 .sublab{font-size:11px;color:var(--muted);letter-spacing:.1em;align-self:center;margin-right:2px}
+/* sort */
+.sortbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px}
+.sortbar label{color:var(--muted);font-size:12px;letter-spacing:.06em}
+.sortbar select{font:inherit;font-size:14px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.sortbar select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.sortbar .st,.basebox .st{font-size:12px;color:var(--muted)}
+.basebox{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+/* scw link */
+.btnlink{display:inline-block;border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:13px;text-decoration:none}
+.scwframe{display:flex;flex-direction:column;gap:6px}
+.scwframe iframe{width:100%;height:min(70vh,520px);border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.scwbox .st{font-size:12px;color:var(--muted)}
 /* plan */
 .plan svg{width:100%;height:auto;display:block}
 .windows{display:flex;flex-wrap:wrap;gap:8px}
@@ -192,6 +208,18 @@ details p,details li{max-width:68ch}
 <section>
   <div class="sec-head"><h2 id="rankTitle">この夜のおすすめ</h2></div>
   <div id="prefChips"></div>
+  <div class="sortbar">
+    <label for="sortSel">並べ替え</label>
+    <select id="sortSel"></select>
+    <span class="st" id="baseInfo" hidden></span>
+  </div>
+  <div class="basebox" id="baseBox" hidden>
+    <div class="st">距離の基準にする地点を決めてください。</div>
+    <div class="scwctl"><button class="filebtn" id="baseGeo">現在地を使う</button></div>
+    <div class="myform"><div class="fld grow"><label for="baseLoc">または 座標・GoogleマップのURL</label><input id="baseLoc" placeholder="35.6812, 139.7671"></div></div>
+    <div class="scwctl"><button class="toggle" id="baseSet">この地点を基準にする</button><button class="linkbtn" id="baseCancel">閉じる</button></div>
+    <div class="st" id="baseMsg"></div>
+  </div>
   <div class="rank" id="rank"></div>
   <button class="more" id="moreBtn">すべて表示</button>
 </section>
@@ -204,10 +232,11 @@ details p,details li{max-width:68ch}
   <div class="sec-head"><h2>マイスポット</h2><span class="muted" style="font-size:12px">このブラウザにだけ保存されます</span></div>
   <div class="myform">
     <div class="fld"><label for="myName">名前・地名</label><input id="myName" maxlength="40" placeholder="例：〇〇峠の駐車場"></div>
-    <div class="fld grow"><label for="myLoc">座標 または GoogleマップのURL</label><input id="myLoc" placeholder="35.6812, 139.7671"></div>
+    <div class="fld grow"><label for="myLoc">座標（Googleマップで長押しして出る数字）</label><input id="myLoc" placeholder="35.6812, 139.7671"></div>
     <div class="fld"><label for="myBortle">ボートル</label><select id="myBortle"><option value="1">1（最暗）</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6（郊外）</option></select></div>
   </div>
   <div class="scwctl"><button class="filebtn" id="myAdd">登録</button><button class="toggle" id="myLookup">地名から座標を調べる</button><a id="myMap" target="_blank" rel="noopener" hidden style="font-size:13px">候補を地図で確認</a></div>
+  <div class="chips" id="myCands"></div>
   <div class="st" id="myMsg" style="font-size:12px;color:var(--muted)"></div>
   <div class="mylist" id="myList"></div>
 </section>
@@ -230,8 +259,8 @@ details p,details li{max-width:68ch}
   <ul>
     <li><b>有効暗夜時間</b>：太陽高度 −18° 以下（天文薄明の外）の10分ごとに「晴れ率 × 月の影響 × 1/6時間」を足したもの。月が地平線上にあると、輝面比に応じて0〜1で割り引きます（半月以上でほぼ0）。</li>
     <li><b>スコア</b>：有効暗夜時間 ÷ その夜の暗夜時間 × 光害係数 × 100。光害係数はボートル2=0.95、3=0.87、4=0.75、5=0.60。</li>
-    <li><b>雲（自動）</b>：<a href="https://open-meteo.com/en/docs/jma-api" target="_blank" rel="noopener">Open-Meteo</a>経由で気象庁のメソモデル（MSM、約5km・約3日先まで）と全球モデル（GSM）の全雲量・下層・中層・上層を取り込みます。開いたときに1時間以上たっていれば自動で取り直し、データはこの端末に保存されるので電波のない場所でも前回の予報を見られます。取得できないとき（Claude上で開いたときなど）は、ページに埋め込んだMET Norwayの予報を使います。</li><li><b>雲（SCW）</b>：SCWは予報を画像で配信しているため、入れたスクリーンショットをClaudeが見て地点ごとの雲量を読み取ります（Claude上でのみ）。読み取った時刻の前後100分は自動の予報より優先します。</li>
-    <li><b>マイスポット</b>：月・暗夜・雲（自動取得時）は登録した座標で計算します。自動取得できないときは、雲を60km以内の最寄り地点の予報で代用します。</li><li><b>地点</b>：座標は駐車場や展望地点付近の目安です。出かける前に地図で場所を確かめてください。自動取得できないとき（Claude上）、予報を埋め込んでいない地点は60km以内の最寄り地点の予報で代用します。</li><li><b>ボートル</b>：光害マップから読んだ目安です。地点内の場所や向きで変わります。</li>
+    <li><b>雲（自動）</b>：<a href="https://open-meteo.com/en/docs/jma-api" target="_blank" rel="noopener">Open-Meteo</a>経由で気象庁のメソモデル（MSM、約5km・約3日先まで）と全球モデル（GSM）の全雲量・下層・中層・上層を取り込みます。開いたときに1時間以上たっていれば自動で取り直し、データはこの端末に保存されるので電波のない場所でも前回の予報を見られます。取得できないとき（Claude上で開いたときなど）は、ページに埋め込んだMET Norwayの予報を使います。</li><li><b>SCWとの連携</b>：地点の詳細の「SCWで開く」で、その地点を中心にしたSCWの雨量・雲量予報を開きます。GitHub版では「このページ内に表示」でページの中にも表示できます（SCW側の設定によっては表示されないことがあります）。SCWを見た結果は「SCWを見た結果をスコアに反映する」で反映できます。</li><li><b>雲（SCW画像）</b>：SCWは予報を画像で配信しているため、入れたスクリーンショットをClaudeが見て地点ごとの雲量を読み取ります（Claude上でのみ）。読み取った時刻の前後100分は自動の予報より優先します。</li>
+    <li><b>マイスポット</b>：月・暗夜・雲（自動取得時）は登録した座標で計算します。自動取得できないときは、雲を60km以内の最寄り地点の予報で代用します。</li><li><b>地点</b>：座標は駐車場や展望地点付近の目安です。出かける前に地図で場所を確かめてください。自動取得できないとき（Claude上）、予報を埋め込んでいない地点は60km以内の最寄り地点の予報で代用します。</li><li><b>並べ替え</b>：距離は基準地点からの直線距離です（道のりではありません）。「近くて条件が良い順」はスコアを距離で割り引いた値（150km離れると半分）で並べます。</li><li><b>ボートル</b>：光害マップから読んだ目安です。地点内の場所や向きで変わります。</li>
     <li>月・太陽の位置はこのページ内で計算しています（誤差は数分程度）。</li>
     <li>道路の夜間通行規制・冬季閉鎖は現地の情報を確認してください。</li>
   </ul>
@@ -456,6 +485,8 @@ let SPOTS=[];
 const BORTLE_F={1:1,2:.95,3:.87,4:.75,5:.6,6:.45};
 const SCW_VAL={clear:8,thin:40,cloudy:90};
 const SCW_LABEL={clear:"快晴",thin:"薄雲・一部雲",cloudy:"曇り"};
+const MSM_NIGHTS=2; // SCW「詳細（MSM・78時間）」で見られるのはおおむね明後日の夜まで
+function scwUrl(s,n){const p=new URLSearchParams({element:"cp",lat:s.lat.toFixed(5),lng:s.lon.toFixed(5)});if(n<=MSM_NIGHTS)p.set("model","msm");return "https://supercweather.com/?"+p.toString()}
 const FIRST_NIGHT=(()=>{const j=new Date(Date.now()+9*3600e3);let d=Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate());if(j.getUTCHours()<6)d-=86400e3;const x=new Date(d);return[x.getUTCFullYear(),x.getUTCMonth(),x.getUTCDate()]})(); // 朝6時までは前夜扱い
 const NIGHTS=9, SCW_NIGHTS=2;
 const WD="日月火水木金土";
@@ -499,10 +530,13 @@ let scwObs=store.get("scwObs",[]);    // [{s:shotId,id,c,conf,t}]
 let obsVer=0, obsById={};
 function indexObs(){obsById={};scwObs.forEach(o=>{if(o.t==null)return;(obsById[o.id]=obsById[o.id]||[]).push(o)});obsVer++;cache.clear()}
 function saveScw(){store.set("scw",scw);store.set("scwShots",shots);store.set("scwObs",scwObs);indexObs()}
-let state={night:0,showAll:false,spot:null,...(()=>{const f=store.get("filter",{});return {region:REGION_NAMES.includes(f.region)?f.region:"全国",pref:f.pref||null}})()};
-function inFilter(s){return (state.region==="全国"||s.region===state.region)&&(!state.pref||s.pref===state.pref)}
-function setFilter(region,pref){state.region=region;state.pref=pref||null;state.showAll=false;store.set("filter",{region:state.region,pref:state.pref});renderAll()}
-function filterLabel(){return state.pref?state.pref:state.region==="全国"?"全国":state.region}
+let state={night:0,showAll:false,spot:null,editBase:false,...(()=>{const f=store.get("filter",{});
+  const rg=new Set((Array.isArray(f.regions)?f.regions:[]).filter(r=>REGION_NAMES.includes(r)));
+  const pf=new Set((Array.isArray(f.prefs)?f.prefs:[]).filter(p=>rg.has(PREF_REGION[p])));
+  return {regions:rg,prefs:pf}})()};
+function inFilter(s){return (!state.regions.size||state.regions.has(s.region))&&(!state.prefs.size||state.prefs.has(s.pref))}
+function saveFilter(){state.showAll=false;store.set("filter",{regions:[...state.regions],prefs:[...state.prefs]});renderAll()}
+function filterLabel(){if(state.prefs.size)return [...state.prefs].slice(0,3).join("・")+(state.prefs.size>3?` ほか${state.prefs.size-3}県`:"");if(state.regions.size)return [...state.regions].join("・");return "全国"}
 
 /* ---------- cloud interpolation ---------- */
 CLOUD.groups.forEach(g=>g.T=g.times.map(s=>Date.parse(s.replace("Z",":00Z"))));
@@ -520,7 +554,7 @@ function scwAt(id,ms){const L=obsById[id];if(!L)return null;let best=null,bd=Inf
 const OM_VARS=["cloud_cover","cloud_cover_low","cloud_cover_mid","cloud_cover_high"];
 const OM_KEYS=["c","lo","mi","hi"];
 const LIVE_MAX_AGE=60*60e3;      // 1時間たったら取り直す
-const LIVE_STALE=12*3600e3;      // 12時間より古いキャッシュは使わない
+const LIVE_STALE=72*3600e3;      // 3日より古いキャッシュは使わない（電波のない場所で前回の予報を見るため長め）
 let LIVE=store.get("live",null), liveVer=0, liveBusy=false, liveErr="";
 if(LIVE&&(!LIVE.at||Date.now()-LIVE.at>LIVE_STALE)) LIVE=null;
 const IN_CLAUDE=!!window.claude;
@@ -545,23 +579,28 @@ async function fetchChunk(list){
 }
 async function fetchLive(force){
   if(IN_CLAUDE||liveBusy) return;
-  if(!force&&LIVE&&Date.now()-LIVE.at<LIVE_MAX_AGE&&SPOTS.every(liveHas)) return;
+  const fresh=LIVE&&Date.now()-LIVE.at<LIVE_MAX_AGE;
+  const targets=(!force&&fresh)?SPOTS.filter(s=>!liveHas(s)):SPOTS;
+  if(!targets.length) return;
+  const merge=!force&&fresh;
   liveBusy=true; liveErr=""; renderStamp();
   try{
-    const spots={}; let t0=null, step=3600e3;
-    for(let i=0;i<SPOTS.length;i+=60){
-      const part=SPOTS.slice(i,i+60), res=await fetchChunk(part);
+    const spots=merge?{...LIVE.spots}:{}; let t0=merge?LIVE.t0:null, step=merge?LIVE.step:3600e3;
+    for(let i=0;i<targets.length;i+=60){
+      const part=targets.slice(i,i+60), res=await fetchChunk(part);
       res.forEach((r,k)=>{
         const s=part[k], h=r&&r.hourly; if(!h||!h.time) return;
         const T=h.time.map(x=>x*1000);
         if(t0==null){t0=T[0]; if(T.length>1) step=T[1]-T[0]}
         const off=Math.round((T[0]-t0)/step), rec={lat:s.lat,lon:s.lon};
-        OM_VARS.forEach((v,vi)=>{const arr=h[v]||[];const o=[];for(let n=0;n<off;n++)o.push(null);arr.forEach(x=>o.push(x==null?null:Math.round(x)));rec[OM_KEYS[vi]]=o});
+        OM_VARS.forEach((v,vi)=>{let arr=(h[v]||[]).map(x=>x==null?null:Math.round(x));const o=[];
+          if(off>=0){for(let n=0;n<off;n++)o.push(null)} else arr=arr.slice(-off);
+          rec[OM_KEYS[vi]]=o.concat(arr)});
         spots[s.id]=rec;
       });
     }
     if(t0==null) throw new Error("データが空でした");
-    LIVE={at:Date.now(),t0,step,spots}; store.set("live",LIVE); liveVer++; cache.clear();
+    LIVE={at:merge?LIVE.at:Date.now(),t0,step,spots}; store.set("live",LIVE); liveVer++; cache.clear();
   }catch(e){ liveErr=String(e&&e.message||e).slice(0,120) }
   finally{ liveBusy=false; renderAll() }
 }
@@ -573,7 +612,7 @@ function renderStamp(){
     st.textContent=`気象庁MSM/GSM（Open-Meteo）・${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}:${String(d.getUTCMinutes()).padStart(2,"0")}取得（${ago(LIVE.at)}）`;}
   else st.textContent=`埋め込みデータ（MET Norway・${STAMP}）`;
   msg.textContent=IN_CLAUDE?"Claude上では最新の予報を取りに行けません。GitHub版で開くと気象庁モデルの最新予報を自動で取り込みます。"
-    :liveErr?`最新の予報を取得できませんでした（${liveErr}）。${LIVE?"前回取得したデータで表示しています。":"埋め込みデータで表示しています。"}`:"";
+    :liveErr?`最新の予報を取得できませんでした（${liveErr}）。${LIVE?`前回（${ago(LIVE.at)}）取得した予報で表示しています。`:"埋め込みデータで表示しています。"}`:(LIVE&&Date.now()-LIVE.at>6*3600e3?`予報は${ago(LIVE.at)}のものです。電波のある所で「最新に更新」を押してください。`:"");
   msg.hidden=!msg.textContent;
 }
 
@@ -662,29 +701,86 @@ function renderNights(){
     el.appendChild(b);
   }
 }
-/* ---------- render: chips ---------- */
+/* ---------- render: filter chips (multi-select) ---------- */
 function renderChips(){
   const el=document.getElementById("prefChips"); el.innerHTML="";
   const row1=document.createElement("div"); row1.className="chips";
-  ["全国",...REGION_NAMES].forEach(rg=>{const b=document.createElement("button");b.className="chip";
-    const n=rg==="全国"?SPOTS.length:SPOTS.filter(s=>s.region===rg).length;
-    b.innerHTML=`${rg} <span class="cnt">${n}</span>`;b.setAttribute("aria-pressed",String(state.region===rg));
-    b.onclick=()=>setFilter(rg,null); row1.appendChild(b)});
+  const mk=(label,n,on,fn)=>{const b=document.createElement("button");b.className="chip";b.innerHTML=`${label}${n!=null?` <span class="cnt">${n}</span>`:""}`;b.setAttribute("aria-pressed",String(on));b.onclick=fn;return b};
+  row1.appendChild(mk("全国",SPOTS.length,!state.regions.size,()=>{state.regions.clear();state.prefs.clear();saveFilter()}));
+  REGION_NAMES.forEach(rg=>row1.appendChild(mk(rg,SPOTS.filter(s=>s.region===rg).length,state.regions.has(rg),()=>{
+    if(state.regions.has(rg)){state.regions.delete(rg);(REGIONS.find(r=>r[0]===rg)||[,[]])[1].forEach(p=>state.prefs.delete(p))}
+    else state.regions.add(rg);
+    saveFilter()})));
   el.appendChild(row1);
-  if(state.region!=="全国"){
-    const ps=(REGIONS.find(r=>r[0]===state.region)||[,[]])[1];
-    if(ps.length>1){
-      const row2=document.createElement("div"); row2.className="chips sub";
-      const lab=document.createElement("span"); lab.className="sublab"; lab.textContent="県"; row2.appendChild(lab);
-      const all=document.createElement("button"); all.className="chip"; all.textContent="すべて"; all.setAttribute("aria-pressed",String(!state.pref));
-      all.onclick=()=>setFilter(state.region,null); row2.appendChild(all);
-      ps.forEach(p=>{const n=SPOTS.filter(s=>s.pref===p).length; if(!n) return;
-        const b=document.createElement("button");b.className="chip";b.innerHTML=`${p} <span class="cnt">${n}</span>`;
-        b.setAttribute("aria-pressed",String(state.pref===p));b.onclick=()=>setFilter(state.region,p);row2.appendChild(b)});
-      el.appendChild(row2);
-    }
+  if(state.regions.size){
+    const row2=document.createElement("div"); row2.className="chips sub";
+    const lab=document.createElement("span"); lab.className="sublab"; lab.textContent="県"; row2.appendChild(lab);
+    row2.appendChild(mk("すべて",null,!state.prefs.size,()=>{state.prefs.clear();saveFilter()}));
+    REGIONS.filter(([rg])=>state.regions.has(rg)).forEach(([rg,ps])=>ps.forEach(p=>{
+      const n=SPOTS.filter(s=>s.pref===p).length; if(!n) return;
+      row2.appendChild(mk(p,n,state.prefs.has(p),()=>{state.prefs.has(p)?state.prefs.delete(p):state.prefs.add(p);saveFilter()}));
+    }));
+    el.appendChild(row2);
   }
+  const hint=document.createElement("div"); hint.className="st"; hint.style.cssText="font-size:12px;color:var(--muted)";
+  hint.textContent="地域・県は複数選べます。もう一度押すと外れます。"; el.appendChild(hint);
 }
+/* ---------- sort & base point ---------- */
+const SORTS={
+  score:{label:"スコア（高い順）"},
+  near:{label:"近くて条件が良い順",needBase:true},
+  dist:{label:"現在地から近い順",needBase:true},
+  eff:{label:"有効暗夜時間（長い順）"},
+  cloud:{label:"雲量（少ない順）"},
+  bortle:{label:"ボートル（暗い順）"},
+  elev:{label:"標高（高い順）"}
+};
+let sortKey=store.get("sort","score"); if(!SORTS[sortKey]) sortKey="score";
+let basePt=store.get("basePt",null); // {lat,lon,label,at}
+function spotDist(s){return basePt?distKm(basePt.lat,basePt.lon,s.lat,s.lon):null}
+function fmtKm(d){return d==null?"":d<10?d.toFixed(1)+"km":Math.round(d)+"km"}
+function sortList(list){
+  const sc=x=>x.r.score??-1, d=x=>x.d??Infinity, tie=(a,b)=>sc(b)-sc(a);
+  const f={
+    score:(a,b)=>sc(b)-sc(a)||d(a)-d(b),
+    near:(a,b)=>((b.r.score??0)/(1+(b.d??1e9)/150))-((a.r.score??0)/(1+(a.d??1e9)/150))||tie(a,b),
+    dist:(a,b)=>d(a)-d(b)||tie(a,b),
+    eff:(a,b)=>b.r.eff-a.r.eff||tie(a,b),
+    cloud:(a,b)=>(a.r.cloud??999)-(b.r.cloud??999)||tie(a,b),
+    bortle:(a,b)=>a.s.bortle-b.s.bortle||tie(a,b),
+    elev:(a,b)=>(b.s.elev??-1)-(a.s.elev??-1)||tie(a,b)
+  }[sortKey]||((a,b)=>sc(b)-sc(a));
+  return list.sort(f);
+}
+function renderSortBar(){
+  const sel=document.getElementById("sortSel");
+  if(!sel.options.length) Object.entries(SORTS).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=v.label;sel.appendChild(o)});
+  sel.value=sortKey;
+  const box=document.getElementById("baseBox"), info=document.getElementById("baseInfo");
+  info.innerHTML=basePt?`基準：${esc(basePt.label)}（${basePt.lat.toFixed(3)}, ${basePt.lon.toFixed(3)}）・距離は直線距離 <button class="linkbtn" id="baseEdit">変更</button>`:"";
+  const need=SORTS[sortKey].needBase;
+  box.hidden=!(need&&!basePt)&&!state.editBase;
+  info.hidden=!basePt;
+  const eb=document.getElementById("baseEdit"); if(eb) eb.onclick=()=>{state.editBase=true;renderSortBar()};
+}
+function setBase(p){basePt=p;store.set("basePt",p);state.editBase=false;renderAll()}
+function baseMsg(t,bad){const m=document.getElementById("baseMsg");m.textContent=t;m.style.color=bad?"var(--bad)":"var(--muted)"}
+document.getElementById("sortSel").onchange=e=>{sortKey=e.target.value;store.set("sort",sortKey);state.showAll=false;renderAll()};
+document.getElementById("baseGeo").onclick=()=>{
+  if(!navigator.geolocation){baseMsg("この表示では現在地を取得できません。座標かGoogleマップのURLを入れてください。",true);return}
+  baseMsg("現在地を取得中…");
+  navigator.geolocation.getCurrentPosition(
+    p=>{baseMsg("");setBase({lat:p.coords.latitude,lon:p.coords.longitude,label:"現在地",at:Date.now()})},
+    e=>baseMsg(e&&e.code===1?"位置情報の利用が許可されていません（Claude上では使えません）。座標かGoogleマップのURLを入れてください。":"現在地を取得できませんでした。座標かGoogleマップのURLを入れてください。",true),
+    {enableHighAccuracy:false,timeout:15000,maximumAge:10*60e3});
+};
+document.getElementById("baseSet").onclick=()=>{
+  const v=document.getElementById("baseLoc").value, loc=parseLoc(v);
+  if(!loc){baseMsg("座標を読み取れませんでした。「35.68, 139.76」の形か、GoogleマップのURLを入れてください。",true);return}
+  if(loc.err){baseMsg(loc.err,true);return}
+  baseMsg(""); setBase({lat:loc.lat,lon:loc.lon,label:"指定した地点",at:Date.now()});
+};
+document.getElementById("baseCancel").onclick=()=>{state.editBase=false;baseMsg("");renderSortBar()};
 function srcTag(r,n,s){
   if(r.scwFrac>0) return `<span class="tag scwset">SCW画像</span>`;
   if(r.ov) return `<span class="tag scwset">SCW ${SCW_LABEL[r.ov]}</span>`;
@@ -695,17 +791,16 @@ function srcTag(r,n,s){
 function renderRank(){
   const n=state.night, d=nightDate(n);
   document.getElementById("rankTitle").textContent=`${dlabel(n)}（${WD[d.getUTCDay()]}）の夜のおすすめ・${filterLabel()}`;
-  const list=SPOTS.filter(inFilter).map(s=>({s,r:evalNight(s,n)}))
-    .sort((a,b)=>(b.r.score??-1)-(a.r.score??-1));
+  const list=sortList(SPOTS.filter(inFilter).map(s=>({s,r:evalNight(s,n),d:spotDist(s)})));
   const el=document.getElementById("rank"); el.innerHTML="";
   const shown=state.showAll?list:list.slice(0,10);
-  shown.forEach(({s,r})=>{
+  shown.forEach(({s,r,d:dk})=>{
     const c=scoreColor(r.score),[g,gc]=grade(r.score);
     const b=document.createElement("button"); b.className="row";
     b.innerHTML=`<span class="score" style="background:${c.bg};color:${c.fg}">${r.score??"–"}</span>
       <span style="min-width:0;display:flex;flex-direction:column;gap:3px">
         <span><span class="nm">${esc(s.name)}</span><span class="pf">${s.my?"マイ・"+s.pref+"付近":s.pref}</span></span>
-        <span class="meta"><span>有効 <b class="num">${fmtH(r.eff)}</b></span><span>雲 <b class="num">${r.cloud==null?"–":Math.round(r.cloud)+"%"}</b></span><span>月なし <b class="num">${fmtH(r.moonless)}</b></span><span>ボートル <b class="num">${s.bortle}</b></span></span>
+        <span class="meta"><span>有効 <b class="num">${fmtH(r.eff)}</b></span><span>雲 <b class="num">${r.cloud==null?"–":Math.round(r.cloud)+"%"}</b></span><span>月なし <b class="num">${fmtH(r.moonless)}</b></span><span>ボートル <b class="num">${s.bortle}</b></span>${s.elev!=null&&(sortKey==="elev")?`<span>標高 <b class="num">${s.elev}m</b></span>`:""}${dk!=null?`<span>距離 <b class="num">${fmtKm(dk)}</b></span>`:""}</span>
       </span>
       <span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="grade" style="color:${gc}">${g}</span>${srcTag(r,n,s)}</span>`;
     b.onclick=()=>{state.spot=s.id;renderDetail();document.getElementById("detailSec").scrollIntoView({behavior:"smooth",block:"start"})};
@@ -722,9 +817,10 @@ function renderGrid(){
   let h="<thead><tr><th></th>";
   for(let n=0;n<NIGHTS;n++){const d=nightDate(n);h+=`<th class="${n===state.night?"sel":""}">${dlabel(n)}<br>${WD[d.getUTCDay()]}</th>`}
   h+="</tr></thead><tbody>";
-  REGIONS.filter(([rg])=>state.region==="全国"||rg===state.region).forEach(([rg,ps])=>{
+  REGIONS.filter(([rg])=>!state.regions.size||state.regions.has(rg)).forEach(([rg,ps])=>{
+    const pl=ps.filter(p=>(!state.prefs.size||state.prefs.has(p))&&SPOTS.some(s=>s.pref===p)); if(!pl.length) return;
     h+=`<tr class="pref"><td colspan="${NIGHTS+1}">${rg}</td></tr>`;
-    ps.filter(p=>!state.pref||p===state.pref).forEach(p=>SPOTS.filter(s=>s.pref===p).forEach(s=>{
+    pl.forEach(p=>SPOTS.filter(s=>s.pref===p).forEach(s=>{
       h+=`<tr><td class="lab">${s.my?"★ ":""}${esc(s.name)} <small>${s.pref}・B${s.bortle}</small></td>`;
       for(let n=0;n<NIGHTS;n++){
         const r=evalNight(s,n),c=scoreColor(r.score);
@@ -777,22 +873,22 @@ function renderDetail(){
   const s=SPOTS.find(x=>x.id===state.spot), n=state.night, r=evalNight(s,n), base=evalNight(s,n,false);
   const c=scoreColor(r.score),[g,gc]=grade(r.score), key=dateKey(n)+"|"+s.id;
   const d=nightDate(n);
-  let scwHtml="";
-  if(n<SCW_NIGHTS){
-    const cur=scw[key]||"";
-    const t0=r.samples[0].t-SCW_WINDOW, t1=r.samples[r.samples.length-1].t+SCW_WINDOW;
-    const readings=(obsById[s.id]||[]).filter(o=>o.t>=t0&&o.t<=t1).sort((a,b)=>a.t-b.t);
-    scwHtml=`<div class="scwbox"><div><b>SCW画像からの読み取り</b>
-      ${readings.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${readings.map(o=>`<span class="tag scwset">${jst(o.t)} 雲${Math.round(o.c)}%</span>`).join("")}</div>
-      <div class="muted" style="font-size:12px;margin-top:6px">読み取った時刻の前後100分はSCWの値、それ以外の時間は${base.model}の予報で計算しています。${base.model}だけだと暗夜の平均雲量は ${base.cloud==null?"–":Math.round(base.cloud)+"%"} です。</div>`
-      :`<div class="muted" style="font-size:12px">この地点はSCWの画像を読み取っていないので、${base.model}の予報で計算しています。SCWでも確かめたいときは、上の「SCWの画像でも確かめる」に${s.pref}周辺が写った ${dlabel(n)} 夜（${darkWindow(r)}）の画像を入れてください。</div>`}</div>
-      <details class="manual"><summary>SCWを見て手動で判定する</summary>
-      <div class="seg" id="scwSeg" style="margin-top:8px">${[["","未確認"],["clear","快晴"],["thin","薄雲・一部雲"],["cloudy","曇り"]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>
+  const scwU=scwUrl(s,n), embKey=s.id+"|"+n, embOn=!IN_CLAUDE&&state.scwEmbed===embKey;
+  const t0=r.samples[0].t-SCW_WINDOW, t1=r.samples[r.samples.length-1].t+SCW_WINDOW;
+  const readings=(obsById[s.id]||[]).filter(o=>o.t>=t0&&o.t<=t1).sort((a,b)=>a.t-b.t);
+  const cur=scw[key]||"";
+  let scwHtml=`<div class="scwbox"><div><b>SCWでこの地域を見る</b>
+      <div class="st" style="margin-top:4px">SCWの「雨量・雲量」予報を、${esc(s.name)}を中心にした地図で開きます。予報時刻はSCWの画面で ${dlabel(n)} 夜（${darkWindow(r)}）に合わせてください。${n>MSM_NIGHTS?"この夜はSCWの「詳細（MSM）」の範囲外なので、SCWのメニューで「広域」を選んでください。":""}</div></div>
+    <div class="seg"><a class="btnlink" href="${scwU}" target="_blank" rel="noopener">SCWで開く</a>${IN_CLAUDE?"":`<button id="scwEmbed" aria-pressed="${embOn}">${embOn?"ページ内の表示を閉じる":"このページ内に表示"}</button>`}</div>
+    ${embOn?`<div class="scwframe"><iframe src="${scwU}" title="SCW ${esc(s.name)}周辺" referrerpolicy="no-referrer-when-downgrade"></iframe><div class="st">表示されないときや操作しにくいときは「SCWで開く」を使ってください。</div></div>`:""}
+    ${readings.length?`<div><div class="st">SCW画像から読み取った値</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">${readings.map(o=>`<span class="tag scwset">${jst(o.t)} 雲${Math.round(o.c)}%</span>`).join("")}</div>
+      <div class="st" style="margin-top:4px">読み取った時刻の前後100分はSCWの値、それ以外の時間は${base.model}の予報で計算しています。${base.model}だけだと暗夜の平均雲量は ${base.cloud==null?"–":Math.round(base.cloud)+"%"} です。</div></div>`
+      :IN_CLAUDE&&n<SCW_NIGHTS?`<div class="st">SCWの画像から数値を取り込みたいときは、上の「SCWの画像でも確かめる」に${s.pref}周辺が写った画像を入れてください。</div>`:""}
+    ${n<SCW_NIGHTS?`<details class="manual"${cur?" open":""}><summary>SCWを見た結果をスコアに反映する</summary>
+      <div class="seg" id="scwSeg" style="margin-top:8px">${[["","反映しない"],["clear","快晴"],["thin","薄雲・一部雲"],["cloudy","曇り"]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>
       <div class="seg" style="margin-top:6px"><button id="scwPref">この判定を${s.pref}の全地点に適用</button></div>
-      <p style="margin:6px 0 0">SCW画像の読み取り値がある時間は、そちらが優先されます。</p></details></div>`;
-  } else {
-    scwHtml=`<div class="muted" style="font-size:12px">この夜はSCWの予報範囲（約2日先まで）の外です。雲は${r.model}の予報を使っています${r.live?"（3日先ごろからは全球モデルGSM）":""}。</div>`;
-  }
+      <p style="margin:6px 0 0">選ぶとこの夜の雲量を快晴8%・薄雲40%・曇り90%として計算し直します。</p></details>`:""}
+  </div>`;
   sec.hidden=false;
   document.getElementById("detail").innerHTML=`
     <div class="hd"><div><div class="eyebrow">${s.my?"マイスポット・"+s.pref+"付近":s.pref}${s.elev!=null?"・標高"+s.elev+"ｍ":""}・ボートル${s.bortle}（目安）</div><h2>${esc(s.name)}</h2><div class="muted" style="font-size:13px">${dlabel(n)}（${WD[d.getUTCDay()]}）17時 〜 翌6時</div></div>
@@ -812,8 +908,10 @@ function renderDetail(){
     ${scwHtml}
     ${(s.my||s.proxy)&&!liveHas(s)?`<div class="note">${s.cloudId?`雲の数値予報は${s.proxy.name}（${Math.round(s.proxyKm)}km先）のものを使っています。`:"近くに予報地点がないため、雲はSCW画像の読み取り値だけで計算します。"}</div>`:""}
     ${s.note?`<div class="note">${s.note}</div>`:""}
-    <div class="links"><a href="https://supercweather.com/" target="_blank" rel="noopener">SCWを開く</a><a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}" target="_blank" rel="noopener">地図で見る</a><a href="https://www.lightpollutionmap.info/#zoom=10.5&lat=${s.lat}&lon=${s.lon}" target="_blank" rel="noopener">光害マップ</a><button class="more" id="closeDetail" style="padding:0">閉じる</button></div>`;
+    <div class="links"><a href="${scwU}" target="_blank" rel="noopener">SCWで開く</a><a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}" target="_blank" rel="noopener">地図で見る</a><a href="https://www.lightpollutionmap.info/#zoom=10.5&lat=${s.lat}&lon=${s.lon}" target="_blank" rel="noopener">光害マップ</a><button class="more" id="closeDetail" style="padding:0">閉じる</button></div>`;
   document.getElementById("closeDetail").onclick=()=>{state.spot=null;renderAll()};
+  const eb=document.getElementById("scwEmbed");
+  if(eb) eb.onclick=()=>{state.scwEmbed=state.scwEmbed===embKey?null:embKey;renderDetail()};
   const seg=document.getElementById("scwSeg");
   if(seg) seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{
     if(b.dataset.v) scw[key]=b.dataset.v; else delete scw[key];
@@ -957,6 +1055,7 @@ function rebuildSpots(){SPOTS=[...BASE_SPOTS.map(baseWithProxy),...mySpots.map(m
 function saveMy(){store.set("mySpots",mySpots);rebuildSpots()}
 function parseLoc(txt){
   txt=String(txt||"").trim(); if(!txt) return null;
+  if(/goo\.gl|maps\.app/i.test(txt)) return {err:"短縮URL（maps.app.goo.gl）からは座標を読み取れません。Googleマップで場所を長押しすると上に「35.xxxx, 139.xxxx」の座標が出るので、それをコピーして貼ってください。"};
   let m=txt.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/)||txt.match(/[?&](?:q|query|ll|center)=(-?\d+(?:\.\d+)?)(?:,|%2C)\s*(-?\d+(?:\.\d+)?)/i)||txt.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/)||txt.match(/(-?\d{1,2}\.\d+)\s*[,，、\s]\s*(-?\d{2,3}\.\d+)/);
   if(!m) return null;
   const lat=+m[1],lon=+m[2];
@@ -988,12 +1087,31 @@ document.getElementById("myAdd").onclick=()=>{
   mySpots.push({id,name:name.slice(0,40),lat:loc.lat,lon:loc.lon,bortle:+document.getElementById("myBortle").value||3});
   saveMy(); document.getElementById("myName").value=""; document.getElementById("myLoc").value="";
   const s=SPOTS.find(x=>x.id===id);
-  myMsg(`${name}を登録しました。${s.cloudId?`雲は${s.proxy.name}（${Math.round(s.proxyKm)}km）の予報で代用します。`:"近くに予報地点がないので、雲はSCW画像の読み取りで補ってください。"}`);
+  myMsg(!IN_CLAUDE?`${name}を登録しました。この地点の予報を取り込みます。`:`${name}を登録しました。${s.cloudId?`雲は${s.proxy.name}（${Math.round(s.proxyKm)}km）の予報で代用します。`:"近くに予報地点がないので、雲はSCW画像の読み取りで補ってください。"}`);
   renderAll(); fetchLive();
 };
+async function geoSearch(q){
+  const btn=document.getElementById("myLookup"), box=document.getElementById("myCands");
+  btn.disabled=true; box.innerHTML=""; myMsg("地名を検索中…");
+  try{
+    const res=await fetch("https://geocoding-api.open-meteo.com/v1/search?"+new URLSearchParams({name:q,count:"8",language:"ja",countryCode:"JP",format:"json"}));
+    const j=await res.json(); const list=(j&&j.results)||[];
+    if(!list.length){myMsg("見つかりませんでした。市町村名など短い地名で試すか、Googleマップの座標を貼ってください。",true);return}
+    myMsg("候補を選ぶと座標が入ります。地図で位置を確かめてから「登録」を押してください。");
+    list.forEach(r=>{const b=document.createElement("button");b.className="chip";
+      b.textContent=`${r.name}（${[r.admin1,r.admin2].filter(Boolean).join("・")}${r.elevation!=null?"・"+Math.round(r.elevation)+"m":""}）`;
+      b.onclick=()=>{document.getElementById("myLoc").value=`${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}`;
+        if(!document.getElementById("myName").value.trim()) document.getElementById("myName").value=r.name;
+        const a=document.getElementById("myMap");a.href=`https://www.google.com/maps/search/?api=1&query=${r.latitude},${r.longitude}`;a.hidden=false;
+        box.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true")};
+      box.appendChild(b)});
+  }catch(e){myMsg("地名の検索に失敗しました。電波を確かめるか、座標を貼ってください。",true)}
+  finally{btn.disabled=false}
+}
 document.getElementById("myLookup").onclick=async()=>{
   const q=document.getElementById("myName").value.trim();
   if(!q){myMsg("先に名前の欄に地名を入れてください。",true);return}
+  if(!IN_CLAUDE){geoSearch(q);return}
   if(!sampleFn){myMsg("この表示ではClaudeに問い合わせできません。座標かGoogleマップのURLを入れてください。",true);return}
   const btn=document.getElementById("myLookup"); btn.disabled=true; myMsg("Claudeに問い合わせ中…");
   try{
@@ -1008,7 +1126,7 @@ document.getElementById("myLookup").onclick=async()=>{
   finally{btn.disabled=false}
 };
 
-function renderAll(){renderNights();renderChips();renderRank();renderGrid();renderDetail();renderPlan();renderShots();renderMy();renderStamp();document.getElementById("countLine").textContent=`全国 47都道府県・${BASE_SPOTS.length}地点${mySpots.length?"＋マイスポット"+mySpots.length:""}`}
+function renderAll(){renderNights();renderChips();renderRank();renderGrid();renderDetail();renderPlan();renderShots();renderMy();renderStamp();renderSortBar();document.getElementById("countLine").textContent=`全国 47都道府県・${BASE_SPOTS.length}地点${mySpots.length?"＋マイスポット"+mySpots.length:""}`}
 rebuildSpots();
 indexObs();
 document.getElementById("liveBtn").onclick=()=>fetchLive(true);
