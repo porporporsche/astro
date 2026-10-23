@@ -487,7 +487,8 @@ const SCW_VAL={clear:8,thin:40,cloudy:90};
 const SCW_LABEL={clear:"快晴",thin:"薄雲・一部雲",cloudy:"曇り"};
 const MSM_NIGHTS=2; // SCW「詳細（MSM・78時間）」で見られるのはおおむね明後日の夜まで
 function scwUrl(s,n){const p=new URLSearchParams({element:"cp",lat:s.lat.toFixed(5),lng:s.lon.toFixed(5)});if(n<=MSM_NIGHTS)p.set("model","msm");return "https://supercweather.com/?"+p.toString()}
-const FIRST_NIGHT=(()=>{const j=new Date(Date.now()+9*3600e3);let d=Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate());if(j.getUTCHours()<6)d-=86400e3;const x=new Date(d);return[x.getUTCFullYear(),x.getUTCMonth(),x.getUTCDate()]})(); // 朝6時までは前夜扱い
+function calcFirstNight(){const j=new Date(Date.now()+9*3600e3);let d=Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate());if(j.getUTCHours()<6)d-=86400e3;const x=new Date(d);return[x.getUTCFullYear(),x.getUTCMonth(),x.getUTCDate()]} // 朝6時までは前夜扱い
+const FIRST_NIGHT=calcFirstNight();
 const NIGHTS=9, SCW_NIGHTS=2;
 const WD="日月火水木金土";
 
@@ -609,9 +610,11 @@ function renderStamp(){
   const st=document.getElementById("stampData"), msg=document.getElementById("liveMsg"), btn=document.getElementById("liveBtn");
   btn.hidden=IN_CLAUDE; btn.disabled=liveBusy; btn.textContent=liveBusy?"取得中…":"最新に更新";
   if(LIVE){const d=new Date(LIVE.at+9*3600e3);
-    st.textContent=`気象庁MSM/GSM（Open-Meteo）・${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}:${String(d.getUTCMinutes()).padStart(2,"0")}取得（${ago(LIVE.at)}）`;}
+    st.textContent=`気象庁MSM/GSM（Open-Meteo）・${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}:${String(d.getUTCMinutes()).padStart(2,"0")}取得（${ago(LIVE.at)}・1時間ごとに自動更新）`;}
   else st.textContent=`埋め込みデータ（MET Norway・${STAMP}）`;
-  msg.textContent=IN_CLAUDE?"Claude上では最新の予報を取りに行けません。GitHub版で開くと気象庁モデルの最新予報を自動で取り込みます。"
+  const embEnd=Math.max(...CLOUD.groups.map(g=>g.T[g.T.length-1]));
+  const embNote=Date.now()>embEnd-48*3600e3?`埋め込みデータは${(d=>`${d.getUTCMonth()+1}/${d.getUTCDate()}`)(new Date(embEnd+9*3600e3))}までの予報なので、それ以降の夜は雲のデータがありません。`:"";
+  msg.textContent=IN_CLAUDE?`Claude上では最新の予報を取りに行けません（雲は10/15時点の予報です）。${embNote}最新の予報はGitHub版で見てください。`
     :liveErr?`最新の予報を取得できませんでした（${liveErr}）。${LIVE?`前回（${ago(LIVE.at)}）取得した予報で表示しています。`:"埋め込みデータで表示しています。"}`:(LIVE&&Date.now()-LIVE.at>6*3600e3?`予報は${ago(LIVE.at)}のものです。電波のある所で「最新に更新」を押してください。`:"");
   msg.hidden=!msg.textContent;
 }
@@ -1131,6 +1134,18 @@ rebuildSpots();
 indexObs();
 document.getElementById("liveBtn").onclick=()=>fetchLive(true);
 fetchLive();
+/* 開いたまま・バックグラウンドから戻ったときの自動更新 */
+const LOADED_NIGHT=FIRST_NIGHT.join("-");
+function autoRefresh(){
+  if(document.hidden) return;
+  if(calcFirstNight().join("-")!==LOADED_NIGHT){location.reload();return} // 朝6時を過ぎたら日付を進める
+  fetchLive(false); // 前回の取得から1時間以上たっていれば取り直す
+  renderStamp();
+}
+document.addEventListener("visibilitychange",autoRefresh);
+window.addEventListener("pageshow",e=>{if(e.persisted)autoRefresh()});
+window.addEventListener("online",()=>fetchLive(false));
+setInterval(autoRefresh,5*60e3);
 const rb=document.getElementById("redBtn");
 function applyRed(on){document.documentElement.classList.toggle("red",on);rb.setAttribute("aria-pressed",String(on));}
 applyRed(store.get("red",false));
